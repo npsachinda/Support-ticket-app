@@ -28,12 +28,12 @@ interface Props {
         last_page: number;
     };
     filters: {
-        search: string;
+        search?: string;
     };
 }
 
-export default function Index({ tickets, filters }: Props) {
-    const [search, setSearch] = useState(filters.search || '');
+export default function Index({ tickets, filters = { search: '' } }: Props) {
+    const [search, setSearch] = useState(filters?.search || '');
 
     const debouncedSearch = useCallback(
         debounce((query: string) => {
@@ -153,10 +153,7 @@ export default function Index({ tickets, filters }: Props) {
                                             {new Date(ticket.created_at).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <Link
-                                                href={`/tickets/${ticket.id}`}
-                                                className="text-primary hover:text-primary-dark dark:text-blue-400 dark:hover:text-blue-300"
-                                            >
+                                            <Link href={route('tickets.show', { ticket: ticket.id })} className="text-primary hover:text-primary-dark dark:text-blue-400 dark:hover:text-blue-300">
                                                 View Details
                                             </Link>
                                         </td>

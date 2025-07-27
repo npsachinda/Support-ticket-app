@@ -2,35 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\TicketCreated;
-use App\Mail\TicketReplied;
-use App\Models\Customer;
-use App\Models\Ticket;
+use App\Services\TicketService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use Inertia\Inertia;
+use App\Models\Ticket;
 
 class TicketController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
-    public function __construct()
-    {
+    public function __construct(
+        protected TicketService $ticketService
+    ) {
         $this->middleware('auth')->except(['create', 'store', 'checkStatus']);
     }
 
     public function create()
     {
-        return Inertia::render('tickets/create');
+        return inertia('tickets/create');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:100',
             'phone' => 'required|string|max:10',
@@ -38,20 +35,7 @@ class TicketController extends BaseController
             'description' => 'required|string',
         ]);
 
-        $customer = Customer::firstOrCreate(
-            ['email' => $request->email],
-            [
-                'name' => $request->name,
-                'phone' => $request->phone,
-            ]
-        );
-
-        $ticket = $customer->tickets()->create([
-            'summary' => $request->summary,
-            'description' => $request->description,
-        ]);
-
-        Mail::to($customer->email)->send(new TicketCreated($ticket));
+        $ticket = $this->ticketService->createTicket($validated);
 
         return back()->with([
             'message' => 'Ticket created successfully',
@@ -65,52 +49,49 @@ class TicketController extends BaseController
             'reference_number' => 'required|string|exists:tickets,reference_number',
         ]);
 
-        $ticket = Ticket::with(['replies.agent', 'customer'])
-            ->where('reference_number', $request->reference_number)
-            ->firstOrFail();
+        $ticket = $this->ticketService->getTicketByReference($request->reference_number);
 
-        return response()->json([
-            'ticket' => $ticket
+        return inertia('tickets/status', [
+            'ticket' => $ticket,
         ]);
     }
 
     public function index(Request $request)
     {
-        $query = Ticket::with(['customer', 'agent'])
-            ->when($request->search, function ($query, $search) {
-                $query->search($search);
-            })
-            ->latest();
-
-        return Inertia::render('tickets/index', [
-            'tickets' => $query->paginate(10),
-            'filters' => $request->only(['search']),
+        $search = $request->get('search', '');
+        
+        if (!empty($search)) {
+            return inertia('tickets/index', [
+                ...$this->ticketService->searchTickets($search),
+                'filters' => ['search' => $search]
+            ]);
+        }
+        
+        return inertia('tickets/index', [
+            ...$this->ticketService->getAllTickets(),
+            'filters' => ['search' => '']
         ]);
     }
 
     public function show(Ticket $ticket)
     {
-        $ticket->load(['customer', 'agent', 'replies.agent']);
-
-        return Inertia::render('tickets/show', [
-            'ticket' => $ticket,
+        return inertia('tickets/show', [
+            'ticket' => $ticket->load(['customer', 'replies.agent'])
         ]);
     }
 
-    public function reply(Ticket $ticket, Request $request)
+    public function reply(int $id, Request $request)
     {
         $request->validate([
             'message' => 'required|string',
         ]);
 
-        $reply = $ticket->replies()->create([
+        $ticket = $this->ticketService->getTicketByReference($id);
+
+        $this->ticketService->addReply($ticket, [
             'message' => $request->message,
             'agent_id' => Auth::user()->agent->id,
         ]);
-
-        $ticket->update(['status' => 'in_progress']);
-
-        Mail::to($ticket->customer->email)->send(new TicketReplied($ticket, $reply));
 
         return back();
     }
