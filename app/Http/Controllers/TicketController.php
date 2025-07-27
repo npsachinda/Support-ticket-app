@@ -53,7 +53,7 @@ class TicketController extends BaseController
 
         Mail::to($customer->email)->send(new TicketCreated($ticket));
 
-        return response()->json([
+        return back()->with([
             'message' => 'Ticket created successfully',
             'reference_number' => $ticket->reference_number,
         ]);

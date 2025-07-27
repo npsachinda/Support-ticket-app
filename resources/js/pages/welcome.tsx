@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,42 +19,30 @@ export default function Welcome() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [success, setSuccess] = useState<{ message: string; reference: string } | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setErrors({});
         setSuccess(null);
 
-        try {
-            const response = await fetch('/tickets', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setErrors(data.errors || {});
-                return;
-            }
-
-            setSuccess({
-                message: data.message,
-                reference: data.reference_number,
-            });
-            setFormData({
-                name: '',
-                email: '',
-                phone: '',
-                summary: '',
-                description: '',
-            });
-        } catch (error) {
-            setErrors({ general: 'An error occurred. Please try again.' });
-        }
+        router.post('/tickets', formData, {
+            onSuccess: (page) => {
+                const response = page.props as any;
+                setSuccess({
+                    message: response.message,
+                    reference: response.reference_number,
+                });
+                setFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    summary: '',
+                    description: '',
+                });
+            },
+            onError: (errors) => {
+                setErrors(errors);
+            },
+        });
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -65,7 +53,6 @@ export default function Welcome() {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
                 <div className="flex justify-between items-center py-6">
                     <div className="flex items-center">
                         <img src="/logo.svg" alt="Logo" className="h-8 w-8" />
@@ -76,7 +63,6 @@ export default function Welcome() {
                     </Link>
                 </div>
 
-                
                 <div className="py-12">
                     <div className="text-center mb-12">
                         <Heading className="mb-4">Welcome to Our Support System</Heading>
@@ -86,7 +72,6 @@ export default function Welcome() {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-12">
-                        
                         <Card className="p-6">
                             {success ? (
                                 <div className="text-center">
@@ -178,7 +163,6 @@ export default function Welcome() {
                             )}
                         </Card>
 
-                        
                         <div className="space-y-8">
                             <div>
                                 <h3 className="text-lg font-semibold mb-2">Check Ticket Status</h3>
