@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Heading from '@/components/heading';
 import AppearanceToggleDropdown from '@/components/appearance-dropdown';
+import debounce from 'lodash/debounce';
 
 interface Customer {
     name: string;
@@ -34,9 +35,21 @@ interface Props {
 export default function Index({ tickets, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        window.location.href = `/tickets?search=${encodeURIComponent(search)}`;
+    const debouncedSearch = useCallback(
+        debounce((query: string) => {
+            router.get('/tickets', { search: query }, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true
+            });
+        }, 300),
+        []
+    );
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSearch(query);
+        debouncedSearch(query);
     };
 
     const handleLogout = () => {
@@ -82,16 +95,15 @@ export default function Index({ tickets, filters }: Props) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex justify-between items-center mb-6">
                     <Heading className="dark:text-white">Support Tickets</Heading>
-                    <form onSubmit={handleSearch} className="flex gap-2">
+                    <div className="flex gap-2">
                         <Input
                             type="search"
                             placeholder="Search by customer name..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={handleSearch}
                             className="dark:bg-gray-700 dark:text-white"
                         />
-                        <Button type="submit">Search</Button>
-                    </form>
+                    </div>
                 </div>
 
                 <div className="bg-white shadow-sm rounded-lg overflow-hidden dark:bg-gray-800">
