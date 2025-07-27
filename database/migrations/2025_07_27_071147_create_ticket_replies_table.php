@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tickets', function (Blueprint $table) {
+        Schema::create('ticket_replies', function (Blueprint $table) {
             $table->id();
-            $table->string('reference_number')->unique();
-            $table->string('summary');
-            $table->text('description');
-            $table->enum('status', ['new', 'in_progress', 'resolved', 'closed'])->default('new');
-            $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('set null');
+            $table->text('message');
+            $table->foreignId('ticket_id')->constrained('tickets')->onDelete('cascade');
             $table->foreignId('agent_id')->nullable()->constrained('agents')->onDelete('set null');
             $table->timestamps();
         });
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tickets');
+        Schema::dropIfExists('ticket_replies');
     }
-};
+}; 
