@@ -32,32 +32,20 @@ interface Ticket {
 
 export default function Status() {
     const [referenceNumber, setReferenceNumber] = useState('');
-    const [ticket, setTicket] = useState<Ticket | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setTicket(null);
 
-        try {
-            const response = await fetch(`/tickets/status?reference_number=${referenceNumber}`, {
-                headers: {
-                    'Accept': 'application/json',
-                },
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setError(data.message || 'Invalid reference number');
-                return;
+        router.get('/tickets/status/check', {
+            reference_number: referenceNumber
+        }, {
+            preserveState: true,
+            onError: (errors) => {
+                setError(errors.reference_number || 'An error occurred. Please try again.');
             }
-
-            setTicket(data.ticket);
-        } catch (error) {
-            setError('An error occurred. Please try again.');
-        }
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -103,47 +91,12 @@ export default function Status() {
                 </Alert>
             )}
 
-            {ticket && (
-                <Card className="p-6">
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="text-lg font-semibold">{ticket.summary}</h3>
-                                <p className="text-sm text-gray-500">
-                                    Reference: {ticket.reference_number}
-                                </p>
-                            </div>
-                            <Badge className={getStatusColor(ticket.status)}>
-                                {ticket.status.replace('_', ' ').toUpperCase()}
-                            </Badge>
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-md">
-                            <h4 className="font-medium mb-2">Description</h4>
-                            <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
-                        </div>
-
-                        {ticket.replies.length > 0 && (
-                            <div>
-                                <h4 className="font-medium mb-4">Replies</h4>
-                                <div className="space-y-4">
-                                    {ticket.replies.map((reply) => (
-                                        <div key={reply.id} className="bg-white p-4 rounded-md border">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="font-medium">{reply.agent.name}</span>
-                                                <span className="text-sm text-gray-500">
-                                                    {new Date(reply.created_at).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <p className="text-gray-700 whitespace-pre-wrap">{reply.message}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </Card>
-            )}
+            {/* Back to Home button */}
+            <div className="mt-4">
+                <Button variant="outline" onClick={() => router.get('/')}>
+                    Back to Home
+                </Button>
+            </div>
         </div>
     );
 } 

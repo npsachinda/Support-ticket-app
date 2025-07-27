@@ -14,27 +14,31 @@ class TicketReplied extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * Create a new message instance.
+     */
     public function __construct(
         public Ticket $ticket,
         public TicketReply $reply
-    ) {
-    }
+    ) {}
 
+    /**
+     * Get the message envelope.
+     */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Reply to Your Support Ticket - ' . $this->ticket->reference_number,
+            subject: "Re: {$this->ticket->summary} [#{$this->ticket->reference_number}]",
         );
     }
 
+    /**
+     * Get the message content definition.
+     */
     public function content(): Content
     {
         return new Content(
             markdown: 'emails.tickets.replied',
-            with: [
-                'ticket' => $this->ticket,
-                'reply' => $this->reply,
-            ],
         );
     }
 } 

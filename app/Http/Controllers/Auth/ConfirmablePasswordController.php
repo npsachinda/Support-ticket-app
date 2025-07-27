@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,7 @@ use Inertia\Response;
 class ConfirmablePasswordController extends Controller
 {
     /**
-     * Show the confirm password page.
+     * Show the confirm password view.
      */
     public function show(): Response
     {
@@ -36,6 +37,6 @@ class ConfirmablePasswordController extends Controller
 
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended('/tickets');
     }
 }

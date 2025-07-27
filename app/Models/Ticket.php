@@ -23,11 +23,8 @@ class Ticket extends Model
         parent::boot();
 
         static::creating(function ($ticket) {
-            do {
-                $reference = strtoupper(Str::random(10));
-            } while (static::where('reference_number', $reference)->exists());
-            
-            $ticket->reference_number = $reference;
+            $ticket->reference_number = Str::random(10);
+            $ticket->status = $ticket->status ?? 'new';
         });
     }
 
@@ -43,13 +40,13 @@ class Ticket extends Model
 
     public function replies(): HasMany
     {
-        return $this->hasMany(TicketReply::class)->orderBy('created_at', 'asc');
+        return $this->hasMany(TicketReply::class);
     }
 
     public function scopeSearch($query, $search)
     {
-        return $query->whereHas('customer', function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%");
+        return $query->whereHas('customer', function ($query) use ($search) {
+            $query->where('name', 'like', "%{$search}%");
         });
     }
 

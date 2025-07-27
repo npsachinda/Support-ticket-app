@@ -66,8 +66,7 @@ class TicketService
     {
         $this->ticketRepository->addReply($ticket, $replyData);
 
-        $this->ticketRepository->update($ticket, ['status' => 'in_progress']);
-
-        Mail::to($ticket->customer->email)->send(new TicketReplied($ticket, $ticket->replies()->latest()->first()));
+        $reply = $ticket->replies()->latest()->first();
+        Mail::to($ticket->customer->email)->send(new TicketReplied($ticket, $reply));
     }
 }

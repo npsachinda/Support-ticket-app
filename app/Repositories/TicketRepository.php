@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Ticket;
+use App\Models\TicketReply;
 use App\Repositories\Interfaces\TicketRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -14,19 +15,18 @@ class TicketRepository implements TicketRepositoryInterface
 
     public function create(array $data): Ticket
     {
+        $data['status'] = $data['status'] ?? 'new';
         return $this->model->create($data);
     }
 
     public function findByReference(string $reference): ?Ticket
     {
-        return $this->model->where('reference_number', $reference)
-            ->with(['replies.agent', 'customer'])
-            ->first();
+        return $this->model->where('reference_number', $reference)->first();
     }
 
     public function getAllPaginated(int $perPage = 10, array $with = []): LengthAwarePaginator
     {
-        return $this->model->with($with)->latest()->paginate($perPage);
+        return $this->model->with($with)->paginate($perPage);
     }
 
     public function findById(int $id): ?Ticket
@@ -41,13 +41,16 @@ class TicketRepository implements TicketRepositoryInterface
 
     public function addReply(Ticket $ticket, array $replyData): void
     {
-        $ticket->replies()->create($replyData);
+        $ticket->replies()->create([
+            'message' => $replyData['message'],
+            'agent_id' => $replyData['agent_id'],
+        ]);
+
+        $ticket->update(['status' => 'in_progress']);
     }
 
     public function searchByCustomerName(string $name, int $perPage = 10): LengthAwarePaginator
     {
-        return $this->model->whereHas('customer', function ($query) use ($name) {
-            $query->where('name', 'like', "%{$name}%");
-        })->with(['customer', 'agent'])->latest()->paginate($perPage);
+        return $this->model->search($name)->with('customer')->paginate($perPage);
     }
 }

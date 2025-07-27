@@ -1,17 +1,15 @@
 @component('mail::message')
 # New Reply to Your Support Ticket
 
-Dear {{ $ticket->customer->name }},
-
-A support agent has replied to your ticket:
-
-**Reference Number:** {{ $ticket->reference_number }}
+**Ticket Reference:** {{ $ticket->reference_number }}  
 **Summary:** {{ $ticket->summary }}
 
-**Agent's Reply:**
+**Reply from {{ $reply->agent->name }}:**  
 {{ $reply->message }}
 
-You can check the full conversation and status of your ticket anytime by visiting our support portal and entering your reference number.
+@component('mail::button', ['url' => url("/tickets/status/check?reference_number={$ticket->reference_number}")])
+View Ticket Status
+@endcomponent
 
 Thanks,<br>
 {{ config('app.name') }}

@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Ticket;
+use Inertia\Inertia;
 
 class TicketController extends BaseController
 {
@@ -50,9 +51,18 @@ class TicketController extends BaseController
         ]);
 
         $ticket = $this->ticketService->getTicketByReference($request->reference_number);
+        
+        if (!$ticket) {
+            return redirect()->route('tickets.check-status')->withErrors([
+                'reference_number' => 'Invalid reference number'
+            ]);
+        }
 
-        return inertia('tickets/status', [
+        $ticket->load(['customer', 'replies.agent']);
+
+        return Inertia::render('tickets/check-status', [
             'ticket' => $ticket,
+            'errors' => (object) []
         ]);
     }
 
@@ -80,19 +90,26 @@ class TicketController extends BaseController
         ]);
     }
 
-    public function reply(int $id, Request $request)
+    public function reply(Ticket $ticket, Request $request)
     {
         $request->validate([
-            'message' => 'required|string',
+            'message' => ['required', 'string'],
         ]);
 
-        $ticket = $this->ticketService->getTicketByReference($id);
+        $agent = Auth::user()->agent;
+        if (!$agent) {
+            return back()->with('error', 'You are not authorized to reply to tickets.');
+        }
 
-        $this->ticketService->addReply($ticket, [
-            'message' => $request->message,
-            'agent_id' => Auth::user()->agent->id,
-        ]);
+        try {
+            $this->ticketService->addReply($ticket, [
+                'message' => $request->message,
+                'agent_id' => $agent->id,
+            ]);
 
-        return back();
+            return back()->with('success', 'Reply sent successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to send reply. Please try again.');
+        }
     }
 }
