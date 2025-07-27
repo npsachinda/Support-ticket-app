@@ -69,8 +69,8 @@ class TicketController extends BaseController
             ->where('reference_number', $request->reference_number)
             ->firstOrFail();
 
-        return Inertia::render('tickets/status', [
-            'ticket' => $ticket,
+        return response()->json([
+            'ticket' => $ticket
         ]);
     }
 
