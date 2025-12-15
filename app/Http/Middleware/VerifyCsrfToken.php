@@ -14,5 +14,6 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         '/tickets',
         '/tickets/status/check',
+        '/stripe/webhook',
     ];
 } 

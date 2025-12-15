@@ -4,12 +4,17 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PricingController;
 use Inertia\Inertia;
+use Laravel\Cashier\Http\Controllers\WebhookController;
 
 // Landing page
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
+
+// Stripe Cashier webhook (used by Stripe / Stripe CLI)
+Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])->name('cashier.webhook');
 
 // Guest ticket routes
 Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
@@ -27,6 +32,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+
+    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
 
     Route::get('/settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/settings/profile', [ProfileController::class, 'update'])->name('profile.update');
