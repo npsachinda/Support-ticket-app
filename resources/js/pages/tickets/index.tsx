@@ -77,6 +77,9 @@ export default function Index({ tickets, filters = { search: '' } }: Props) {
             <div className="bg-white shadow dark:bg-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
+                        <Link href={route('pricing.index')}>
+                            <Button variant="outline">Pricing</Button>
+                        </Link>
                         <div className="flex items-center">
                             <img src="/logo.svg" alt="Logo" className="h-8 w-8" />
                             <span className="ml-2 text-xl font-bold dark:text-white">Support System</span>
