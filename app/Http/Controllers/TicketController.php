@@ -10,24 +10,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Ticket;
 use Inertia\Inertia;
-
+use App\Services\Logger;
 class TicketController extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests;
 
     public function __construct(
-        protected TicketService $ticketService
+        protected TicketService $ticketService,
+        protected Logger $logger
     ) {
         $this->middleware('auth')->except(['create', 'store', 'checkStatus']);
     }
 
     public function create()
     {
+        $this->logger->log('Creating ticket');
         return inertia('tickets/create');
     }
 
     public function store(Request $request)
     {
+        $this->logger->log('Validating request');
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:100',
